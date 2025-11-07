@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiniela 14</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+  }
+  table {
+    border-collapse: collapse;
+    margin: 20px auto;
+    width: 80%;
+  }
+  th, td {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: center;
+  }
+  .opcion {
+    display: inline-block;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin: 0 2px;
+    user-select: none;
+    border: 1px solid #333;
+  }
+  .opcion.seleccionado {
+    background-color: #4caf50;
+    color: white;
+  }
+  #desarrollar {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 20px;
+    cursor: pointer;
+  }
+  #reducir13 {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 20px;
+    cursor: pointer;
+  }
+  #reducir12 {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 20px;
+    cursor: pointer;
+  }
+  #resultados {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+  }
+  #resultados2 {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+  }
+</style>
+
+<script>
+    function calcularInversos() {
+      const n1 = parseFloat(document.getElementById("num1").value);
+      const n2 = parseFloat(document.getElementById("num2").value);
+      const n3 = parseFloat(document.getElementById("num3").value);
+
+      if ([n1, n2, n3].some(isNaN)) {
+        document.getElementById("resultadoInverso").innerText = "Por favor introduce los 3 números.";
+        return;
+      }
+      if ([n1, n2, n3].some(x => x === 0)) {
+        document.getElementById("resultadoInverso").innerText = "No se puede calcular el inverso de 0.";
+        return;
+      }
+
+      const suma = (1/n1) + (1/n2) + (1/n3);
+      //document.getElementById("resultadoInverso").innerText = "Resultado: " + suma;
+      document.getElementById("resultadoInverso").innerText = "\nLas probabilidades calculadas son:";
+
+      document.getElementById("prob1").innerText = "prob1: " + Math.round(1/n1/suma*100) + " %";
+      document.getElementById("prob2").innerText = "prob2: " + Math.round(1/n2/suma*100) + " %";
+      document.getElementById("prob3").innerText = "prob3: " + Math.round(1/n3/suma*100) + " %";
+
+    }
+</script>
+</head>
+
+<body>
+
+<h1>Reducidas</h1>
+La idea de las reducciones consiste en desarrollar una quiniela multiple y quitar las columnas que son parecidas.<br><br>
+Asi se cubre mas o menos el mismo rango de resultados que la multiple, y si se tiene suerte pillas 14<br><br>
+Si tienes mala suerte sacas menos, pero si quitas una de cada dos te garantizas 13 y si quitas una de cada 3 te garantizas 12<br><br>
+Ejemplo<br><br>
+
+<table id="quiniela">
+  <thead>
+    <tr>
+      <th>Partido</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Se generarán automáticamente los 14 partidos -->
+  </tbody>
+</table>
+
+<button id="desarrollar">Desarrollar</button>
+
+<div id="resultados"></div>
+
+<button id="reducir13">Reducir13</button>
+<button id="reducir12">Reducir12</button>
+
+
+<div id="resultados2"></div>
+
+
+<script>
+
+  const tbody = document.querySelector('#quiniela tbody');
+
+  // Generar 14 partidos
+  for (let i = 1; i <= 14; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>Partido ${i}</td>
+      <td class="opcion">1</td>
+      <td class="opcion">X</td>
+      <td class="opcion">2</td>`;
+    tbody.appendChild(tr);
+  }
+
+  // Manejar selección múltiple
+  const opciones = document.querySelectorAll('.opcion');
+  opciones.forEach(opcion => {
+    opcion.addEventListener('click', () => {
+      opcion.classList.toggle('seleccionado');
+    });
+  });
+
+  // Función para desarrollar combinaciones
+  function desarrollarCombinaciones() {
+    const filas = document.querySelectorAll('#quiniela tbody tr');
+    let elecciones = [];
+
+    filas.forEach(fila => {
+      const seleccionadas = Array.from(fila.querySelectorAll('.opcion.seleccionado'))
+                                .map(o => o.textContent);
+      elecciones.push(seleccionadas.length ? seleccionadas : []);
+    });
+
+    // Generar combinaciones recursivamente
+    function combinar(arrays, prefix = []) {
+      if (!arrays.length) return [prefix];
+      const result = [];
+      const first = arrays[0];
+      if (first.length === 0) return combinar(arrays.slice(1), prefix);
+      first.forEach(f => {
+        result.push(...combinar(arrays.slice(1), [...prefix, f]));
+      });
+      return result;
+    }
+
+    return combinar(elecciones);
+  }
+
+  let combinacionesGuardadas = [];
+
+  document.getElementById('desarrollar').addEventListener('click', () => {
+    const combos = desarrollarCombinaciones();
+    combinacionesGuardadas = combos; // guardar para "Reducir"
+    mostrarResultados1(combos, "Apuestas desarrolladas");
+  });
+
+  document.getElementById('reducir12').addEventListener('click', () => {
+    if (combinacionesGuardadas.length === 0) {
+      alert("Primero debes desarrollar la quiniela.");
+      return;
+    }
+
+    let DIFF = 3 // para reducir al 12 permito 3 diferencias
+    let reducidas = [];
+    for (let i = 0; i < combinacionesGuardadas.length; i++) {
+      let actual = combinacionesGuardadas[i];
+      let valido = true;
+
+      // comprobar contra todas las ya guardadas
+      for (let j = 0; j < reducidas.length; j++) {
+        let diferencias = contarDiferencias(actual, reducidas[j]);
+        if (diferencias < DIFF) {
+          valido = false;
+          break;
+        }
+      }
+
+      if (valido) reducidas.push(actual);
+    }
+
+    mostrarResultados2(reducidas, "Apuestas reducidas");
+  });
+
+  document.getElementById('reducir13').addEventListener('click', () => {
+    if (combinacionesGuardadas.length === 0) {
+      alert("Primero debes desarrollar la quiniela.");
+      return;
+    }
+
+    let DIFF = 2 // para reducir al 13 permito 2 diferencias
+    let reducidas = [];
+    for (let i = 0; i < combinacionesGuardadas.length; i++) {
+      let actual = combinacionesGuardadas[i];
+      let valido = true;
+
+      // comprobar contra todas las ya guardadas
+      for (let j = 0; j < reducidas.length; j++) {
+        let diferencias = contarDiferencias(actual, reducidas[j]);
+        if (diferencias < DIFF) {
+          valido = false;
+          break;
+        }
+      }
+
+      if (valido) reducidas.push(actual);
+    }
+
+    mostrarResultados2(reducidas, "Apuestas reducidas");
+  });
+
+  function contarDiferencias(apuesta1, apuesta2) {
+    let dif = 0;
+    for (let i = 0; i < apuesta1.length; i++) {
+      if (apuesta1[i] !== apuesta2[i]) dif++;
+    }
+    return dif;
+  }
+
+  function mostrarResultados1(lista, titulo) {
+    const resultadosDiv = document.getElementById('resultados');
+    resultadosDiv.innerHTML = `<strong>${titulo}: ${lista.length}</strong><br><br>`;
+    lista.forEach((c, i) => {
+      resultadosDiv.innerHTML += `${i+1}: ${c.join(' ')}<br>`;
+    });
+  }
+
+  function mostrarResultados2(lista, titulo) {
+    const resultadosDiv = document.getElementById('resultados2');
+    resultadosDiv.innerHTML = `<strong>${titulo}: ${lista.length}</strong><br><br>`;
+    lista.forEach((c, i) => {
+      resultadosDiv.innerHTML += `${i+1}: ${c.join(' ')}<br>`;
+    });
+  }
+</script>
+
+<br>
+<br>
+<br>
+
+</body>
+</html>
+
+
+
+
